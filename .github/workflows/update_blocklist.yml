@@ -1,0 +1,26 @@
+name: Update Blocklist
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  block_ads_update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install jq, curl and other utilities
+        run: |
+          sudo apt update
+          sudo apt install -y jq curl coreutils
+
+      - name: Run the script
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+        run: |
+          chmod +x generate_blocklist.sh
+          ./generate_blocklist.sh
