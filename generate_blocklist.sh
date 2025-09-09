@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PREFIX="Block ads"
+PREFIX="Blocklist_Ads"
 MAX_LIST_SIZE=1000
 MAX_LISTS=100
 MAX_RETRIES=10
@@ -128,7 +128,7 @@ for file in "${chunked_lists[@]}"; do
 	formatted_counter=$(printf "%03d" "$list_counter")
 
 	# Create payload
-	payload=$(jq -n --arg PREFIX "${PREFIX} - ${formatted_counter}" --argjson items "$(jq -R -s 'split("\n") | map(select(length > 0) | { "value": . })' "${file}")" '{
+	payload=$(jq -n --arg PREFIX "${PREFIX}-${formatted_counter}" --argjson items "$(jq -R -s 'split("\n") | map(select(length > 0) | { "value": . })' "${file}")" '{
         "name": $PREFIX,
         "type": "DOMAIN",
         "items": $items
