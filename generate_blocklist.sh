@@ -1,23 +1,30 @@
 #!/bin/bash
 
-PREFIX="Blocklist_Ads"
+PREFIX="Blocklist (Ads)"
 MAX_LIST_SIZE=1000
 MAX_LISTS=100
 MAX_RETRIES=10
 
-# Define error function
 function error() {
 	echo "Error: $1"
 	rm -f oisd_small_domainswild2.txt.*
 	exit 1
 }
 
-# Define silent error function
 function silent_error() {
 	echo "Silent error: $1"
 	rm -f oisd_small_domainswild2.txt.*
 	exit 0
 }
+
+# Set environment variable from local .env for local execution
+if [[ -f .env ]]; then
+	export $(grep -v '^#' .env | xargs)
+fi
+
+if [[ -z "$ACCOUNT_ID" || -z "$API_TOKEN" ]]; then
+	error "ACCOUNT_ID and API_TOKEN must be set"
+fi
 
 # Download the latest domains list
 curl -sSfL --retry "$MAX_RETRIES" --retry-all-errors https://small.oisd.nl/domainswild2 | grep -vE '^\s*(#|$)' >oisd_small_domainswild2.txt || silent_error "Failed to download the domains list"
@@ -122,13 +129,13 @@ fi
 
 # Create extra lists if required
 for file in "${chunked_lists[@]}"; do
-	echo "Creating list..."
+	echo "Creating list $list_counter..."
 
 	# Format list counter
 	formatted_counter=$(printf "%03d" "$list_counter")
 
 	# Create payload
-	payload=$(jq -n --arg PREFIX "${PREFIX}-${formatted_counter}" --argjson items "$(jq -R -s 'split("\n") | map(select(length > 0) | { "value": . })' "${file}")" '{
+	payload=$(jq -n --arg PREFIX "${PREFIX} - ${formatted_counter}" --argjson items "$(jq -R -s 'split("\n") | map(select(length > 0) | { "value": . })' "${file}")" '{
         "name": $PREFIX,
         "type": "DOMAIN",
         "items": $items
