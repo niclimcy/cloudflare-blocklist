@@ -12,11 +12,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install jq, curl and other utilities
-        run: |
-          sudo apt update
-          sudo apt install -y jq curl coreutils
-
       - name: Run the script
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
