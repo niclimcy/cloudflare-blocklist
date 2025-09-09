@@ -16,6 +16,4 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
           ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
-        run: |
-          chmod +x generate_blocklist.sh
-          ./generate_blocklist.sh
+        run: ./generate_blocklist.sh
