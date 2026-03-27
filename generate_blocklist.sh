@@ -5,14 +5,18 @@ MAX_LIST_SIZE=1000
 MAX_LISTS=100
 MAX_RETRIES=10
 
+function log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
+}
+
 function error() {
-	echo "Error: $1"
+	log "Error: $1"
 	rm -f oisd_small_domainswild2.txt.*
 	exit 1
 }
 
 function silent_error() {
-	echo "Silent error: $1"
+	log "Silent error: $1"
 	rm -f oisd_small_domainswild2.txt.*
 	exit 0
 }
@@ -85,12 +89,12 @@ if [[ ${current_lists_count} -gt 0 ]]; then
 	for list_id in $(echo "${current_lists}" | jq -r --arg PREFIX "${PREFIX}" '.result | map(select(.name | contains($PREFIX))) | .[].id'); do
 		# If there are no more chunked lists, mark the list ID for deletion
 		[[ ${#chunked_lists[@]} -eq 0 ]] && {
-			echo "Marking list ${list_id} for deletion..."
+			log "Marking list ${list_id} for deletion..."
 			excess_list_ids+=("${list_id}")
 			continue
 		}
 
-		echo "Updating list ${list_id}..."
+		log "Updating list ${list_id}..."
 
 		# Get list contents
 		list_items=$(curl -sSfL --retry "$MAX_RETRIES" --retry-all-errors -X GET "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/gateway/lists/${list_id}/items?limit=${MAX_LIST_SIZE}" \
@@ -124,12 +128,14 @@ if [[ ${current_lists_count} -gt 0 ]]; then
 
 		# Increment list counter
 		list_counter=$((list_counter + 1))
+
+		sleep 2
 	done
 fi
 
 # Create extra lists if required
 for file in "${chunked_lists[@]}"; do
-	echo "Creating list $list_counter..."
+	log "Creating list $list_counter..."
 
 	# Format list counter
 	formatted_counter=$(printf "%03d" "$list_counter")
@@ -232,7 +238,7 @@ json_data='{
 [[ -z "${policy_id}" || "${policy_id}" == "null" ]] &&
 	{
 		# Create the policy
-		echo "Creating policy..."
+		log "Creating policy..."
 		curl -sSfL --retry "$MAX_RETRIES" --retry-all-errors -X POST "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/gateway/rules" \
 			-H "Authorization: Bearer $API_TOKEN" \
 			-H "Content-Type: application/json" \
@@ -240,7 +246,7 @@ json_data='{
 	} ||
 	{
 		# Update the policy
-		echo "Updating policy ${policy_id}..."
+		log "Updating policy ${policy_id}..."
 		curl -sSfL --retry "$MAX_RETRIES" --retry-all-errors -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/gateway/rules/${policy_id}" \
 			-H "Authorization: Bearer $API_TOKEN" \
 			-H "Content-Type: application/json" \
@@ -249,7 +255,7 @@ json_data='{
 
 # Delete excess lists in $excess_list_ids
 for list_id in "${excess_list_ids[@]}"; do
-	echo "Deleting list ${list_id}..."
+	log "Deleting list ${list_id}..."
 	curl -sSfL --retry "$MAX_RETRIES" --retry-all-errors -X DELETE "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/gateway/lists/${list_id}" \
 		-H "Authorization: Bearer $API_TOKEN" \
 		-H "Content-Type: application/json" >/dev/null || error "Failed to delete list ${list_id}"
